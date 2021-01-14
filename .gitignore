@@ -138,11 +138,4 @@ dmypy.json
 cython_debug/
 
 cbow_homer/.ipynb_checkpoints/Saving_embeddings-checkpoint.ipynb
-cbow_homer/.ipynb_checkpoints/Untitled-checkpoint.ipynb
-cbow_homer/cbow_homer_eval.py
-cbow_homer/cbow_nn_main.py
-cbow_homer/cbowHomer_trained_embeddings.py
-cbow_homer/Saving_embeddings.ipynb
-cbow_homer/Untitled.ipynb
-cbow_homer/.ipynb_checkpoints/Saving_embeddings-checkpoint.ipynb
 
