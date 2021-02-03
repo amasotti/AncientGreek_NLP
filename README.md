@@ -1,2 +1,3 @@
 # GreekParser
- Simple tools for Ancient Greek
+
+Miscellaneous folder, my personal NLP Playground with Ancient Greek Texts.
