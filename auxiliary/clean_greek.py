@@ -37,6 +37,7 @@ def clean_greek(text):
     text = re.sub(r'  +', ' ', text, 0,re.MULTILINE)
     text = re.sub(r'\s\.\s\.\s', ' . ', text, 0, re.MULTILINE)
     text = re.sub(r'\s·\s.\s',' · ',text,0,re.MULTILINE)
+    text = re.sub(r"(\w)(\.|\,|\?|·|;)", "\\1 \\2", data, 0, re.MULTILINE)
     #
 
     print(f'cleaning successfull; actual size: {len(text)}')
