@@ -140,3 +140,4 @@ cython_debug/
 
 cbow_homer/.ipynb_checkpoints/Saving_embeddings-checkpoint.ipynb
 
+.Rproj.user
