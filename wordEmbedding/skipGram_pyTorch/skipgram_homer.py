@@ -1,11 +1,12 @@
 import json
 import os
 from argparse import Namespace
-from tqdm import tqdm
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.optim as optim
+from tqdm import tqdm
 
 from wordEmbedding.utils.dataset import trainDataset, make_batch
 from wordEmbedding.utils.modules import CBOW
@@ -53,16 +54,16 @@ skipDataset = skipDataset.tolist()
 TEST_WORDS = ['μηνιν', "εθηκε", "ερχομαι", "θεα", "βροτον", "ευχομαι", "ερος", "φρασαι", "εφατʼ"]
 
 params = Namespace(
-    train_size= 0.7,
-    val_size = 0.15,
+    train_size=0.7,
+    val_size=0.15,
     drop_last=True,
-    batch=1024*2,
+    batch=1024 * 2,
     epochs=20,
     lr=0.002,
     device='cpu',
     cuda=False,
     embeddings=100,
-    show_stats_after = 50, # after how many batches should the bars be updated
+    show_stats_after=50,  # after how many batches should the bars be updated
 )
 
 if not torch.cuda.is_available():
@@ -75,8 +76,7 @@ else:
 print(f"Using GPU ({params.device}) : {params.cuda}")
 
 # Make Torch Dataset from list (splits data and transforms them into tensors)
-Dataset = trainDataset(skipDataset,train_size=params.train_size, val_size=params.val_size)
-
+Dataset = trainDataset(skipDataset, train_size=params.train_size, val_size=params.val_size)
 
 # make noise distribution to sample negative examples from #FIXME: Probably we would need to delete this or adjust to splitted sets
 word_freqs = np.array(list(vocab.values()))
@@ -86,8 +86,8 @@ noise_dist = torch.from_numpy(unigram_dist ** (0.75) / np.sum(unigram_dist ** (0
 model = CBOW(vocab_size=len(vocab),
              embeddings=params.embeddings,
              device=params.device,
-             noise_dist=None, #TODO: See later if this works
-             negs=15).to(params.device)
+             noise_dist=None,  # TODO: See later if this works
+             negs=15)
 
 # Load model
 ckpt = torch.load(os.path.join(paths.model))
@@ -107,9 +107,9 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
                                                  factor=0.3, patience=1)
 # Set bars
 
-epoch_bar = tqdm(desc="Epochs Routine",total=params.epochs,position=0,leave=True)
-train_bar = tqdm(desc="Training phase",total=Dataset.train_size/params.batch, position=1, leave=True)
-val_bar = tqdm(desc="Validataion phase",total=Dataset.val_size/params.batch, position=1, leave=True)
+epoch_bar = tqdm(desc="Epochs Routine", total=params.epochs, position=0, leave=True)
+train_bar = tqdm(desc="Training phase", total=Dataset.train_size / params.batch, position=1, leave=True)
+val_bar = tqdm(desc="Validataion phase", total=Dataset.val_size / params.batch, position=1, leave=True)
 
 ## AND ..... GO .....
 for epoch in tqdm(range(params.epochs)):
@@ -127,7 +127,7 @@ for epoch in tqdm(range(params.epochs)):
                         batch_size=params.batch,
                         shuffle=False,
                         drop_last=params.drop_last)
-    loss = 0 # reset the actual loss
+    loss = 0  # reset the actual loss
 
     # Batch for the training phase
     for batch_idx, (inp, target) in enumerate(Loader):
@@ -162,7 +162,8 @@ for epoch in tqdm(range(params.epochs)):
     Loader = make_batch(dataset=Dataset,
                         device=params.device,
                         batch_size=params.batch,
-                        shuffle=False, # FIXME: The problem is that shuffling takes also items from other splitted sets, resulting in a out of bound Error, but I'd like somehow to shuffle the data
+                        shuffle=False,
+                        # FIXME: The problem is that shuffling takes also items from other splitted sets, resulting in a out of bound Error, but I'd like somehow to shuffle the data
                         drop_last=params.drop_last)
 
     # Evaluation / Validation mode
@@ -180,10 +181,9 @@ for epoch in tqdm(range(params.epochs)):
             val_bar.set_postfix(loss=loss.item(), epoch=epoch)
             val_bar.update(n=params.show_stats_after)
             # Run a small test:
-            print_test(model, TEST_WORDS, w2i, index2word,epoch=epoch)
+            print_test(model, TEST_WORDS, w2i, index2word, epoch=epoch)
 
     epoch_bar.update()
-
 
 plt.figure(figsize=(100, 100))
 plt.xlabel("batches")
