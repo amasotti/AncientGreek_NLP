@@ -30,10 +30,10 @@ Skip-Gram-Model-PyTorch ](https://github.com/n0obcoder/Skip-Gram-Model-PyTorch) 
 ### Loss curve
 
 #### Training phase
-<img src="./losses_train.png" alt="loss_train" style="width: 200px height:200px" >
+<img src="./losses_train.png" alt="loss_train" style="width: 100px height:100px" >
 
 #### Validation Phase
-<img src="./losses_val.png" alt="loss_val" style="width: 200px height:200px" >
+<img src="./losses_val.png" alt="loss_val" style="width: 100px height:100px" >
 
 
 
