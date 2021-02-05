@@ -4,54 +4,11 @@ Auxiliary functions
 """
 import json
 
+import torch
 from cltk.tokenize.sentence import TokenizeSentence
 from cltk.tokenize.word import WordTokenizer
-from more_itertools import locate
 import numpy as np
 from tqdm import tqdm
-from sklearn.cluster import KMeans
-from sklearn.metrics.pairwise import euclidean_distances, cosine_distances
-
-def allIndices(sent, wanted):
-    '''
-    Find all indices of a given word in a sentence (needed, if a word occurs more than once in a sent)
-    '''
-    indices = list(locate(sent, lambda a : a == wanted))
-    return indices
-
-
-def find_neighbours(corpus, target, window=9):
-    '''
-    find the context of a word in a given corpus
-    '''
-    print('Finding the neighbours for each word in vocab')
-    context = []
-    # iterate per sentence
-    for sentence in corpus:
-        # if the wanted form is in the sentence, extract all the indices
-        if target in sentence:
-            indices = allIndices(sentence, target)
-
-            # for each occurrence
-            for occurrence in indices:
-                for j in range(max(occurrence - window, 0), min(occurrence + window, len(sentence))):
-                    if j != occurrence:
-                        context.append(sentence[j])
-    return context
-
-
-def createCbow(corpus, vocab, window):
-    '''
-
-    Builds the dataset for cbow
-
-    '''
-    print('Building the CBOW dataset...')
-    data = []
-    for word in vocab:
-        context = find_neighbours(corpus, word, window)
-        data.append((context, word))
-    return data
 
 
 def createCorpus(text, save=True):
@@ -62,6 +19,12 @@ def createCorpus(text, save=True):
              + the vocab (a dictionary with the frequency of the tokens scaled by the total number of words.
 
     '''
+    with open('../../data/stopwords.txt','r',encoding="UTF-8") as src:
+        stopwords = src.read()
+
+    stopwords = stopwords.split('\n')
+    stopwords.extend([".",",","?","!","-",":",";","·"])
+
     Stokenizer = TokenizeSentence('greek')
     Wtokenizer = WordTokenizer('greek')
     sentences = Stokenizer.tokenize(text)
@@ -70,6 +33,8 @@ def createCorpus(text, save=True):
     print('Building corpus and freqDictionary')
     for sent in tqdm(sentences, desc="Sentences"):
         new_sent = Wtokenizer.tokenize(sent)
+        # Stopword deletion
+        new_sent = [w for w in new_sent if w not in stopwords]
         new_sentences.append(new_sent)
         for w in new_sent:
             if w not in vocab:
@@ -94,3 +59,44 @@ def createCorpus(text, save=True):
     return new_sentences, vocab
 
 
+def save_model(model, epoch, losses,fp):
+    """
+    Compare the actual and the last loss value. If the value improved, save the model
+    """
+    if epoch > 1:
+        print("Check if the model should be saved:")
+        if losses[-1] < losses[-2]:
+            print("Loss improved, save the model")
+            torch.save({'model_state_dict': model.state_dict(),
+                        'losses': losses}, fp)
+
+
+# TEST
+def nearest_word(inp, emb, top=5, debug=False):
+    #TODO: Use cosine distance instead of euclidean
+    euclidean_dis = np.linalg.norm(inp - emb, axis=1)
+    emb_ranking = np.argsort(euclidean_dis)
+    emb_ranking_distances = euclidean_dis[emb_ranking[:top]]
+
+    emb_ranking_top = emb_ranking[:top]
+    euclidean_dis_top = euclidean_dis[emb_ranking_top]
+
+    return emb_ranking_top, euclidean_dis_top
+
+def print_test(model, words, w2i, i2w, epoch):
+    model.eval()
+    emb_matrix = model.embeddings_target.weight.data.cpu()
+    nearest_words_dict = {}
+
+    print('==============================================')
+    for w in words:
+        inp_emb = emb_matrix[w2i[w], :]
+
+        emb_ranking_top, _ = nearest_word(inp_emb, emb_matrix, top=6)
+        with open("../../data/models/summary_guesses.txt",'a',encoding="utf-8") as fp:
+            fp.write(f"Epoch: {epoch}:\n{w.ljust(10)} |  {', '.join([i2w[i] for i in emb_ranking_top[1:]])}\n")
+        print(w.ljust(10), ' | ', ', '.join([i2w[i] for i in emb_ranking_top[1:]]))
+    with open("../../data/models/summary_guesses.txt", 'a', encoding="utf-8") as fp:
+        fp.write("\n----------------------------------------------------------------\n")
+
+    return nearest_words_dict
