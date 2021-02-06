@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'Antonio Masotti'
 __date__ = 'january 2021'
 
@@ -7,6 +7,11 @@ from abc import ABC
 '''
 Mein Versuch, ein CBOW for die Homerische Media zu erstellen
 nach dem Muster von Brian & MacMahan - NLP with Pytorch
+
+This file doesn't contain the actual training loop, just the classes and functions needed to build
+a trainable dataset and the neural model itself.
+
+**DISCLAIMER**: See the folder wordEmbeddings for a newer version!
 
 '''
 # imports
@@ -18,9 +23,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-
-
-
 
 
 class Vocab(object):
@@ -111,7 +113,8 @@ class Vectorizer(object):
 
         """
 
-        indices = [self.vocab.lookup_token(token) for token in context.split(' ')]
+        indices = [self.vocab.lookup_token(token)
+                   for token in context.split(' ')]
         if length < 0:
             length = len(indices)
 
@@ -146,20 +149,21 @@ class Vectorizer(object):
     def to_json(self):
         return {'vocabulary': self.vocab.save()}
 
+
 class CBOWDataset(Dataset):
     """
     Class organizing the flow of the NN
 
     """
 
-    def __init__(self,df,vectorizer):
+    def __init__(self, df, vectorizer):
         self.cbow_df = df
         self.vectorizer = vectorizer
 
-        find_length = lambda context : len(context.split(' '))
+        def find_length(context): return len(context.split(' '))
         # go through the different contexts and take the longest one
 
-        self.max_length = max(map(find_length,self.cbow_df.context))
+        self.max_length = max(map(find_length, self.cbow_df.context))
 
         self.train_df = self.cbow_df[self.cbow_df.split_subset == "train"]
         self.train_size = len(self.train_df)
@@ -170,9 +174,9 @@ class CBOWDataset(Dataset):
         self.test_df = self.cbow_df[self.cbow_df.split_subset == "test"]
         self.test_size = len(self.test_df)
 
-        self.subset_dict = {'train' : (self.train_df, self.train_size),
-                            'test' : (self.test_df, self.test_size),
-                            'validation' : (self.validation_df, self.validation_size)}
+        self.subset_dict = {'train': (self.train_df, self.train_size),
+                            'test': (self.test_df, self.test_size),
+                            'validation': (self.validation_df, self.validation_size)}
 
     @classmethod
     def load_and_create(cls, csv_file):
@@ -182,19 +186,19 @@ class CBOWDataset(Dataset):
         return cls(df, Vectorizer.from_df(train_df))
 
     @classmethod
-    def load_all(cls,csv_file, vectorizer_path):
+    def load_all(cls, csv_file, vectorizer_path):
         df = pd.read_csv(csv_file)
         vectorizer = cls.load_vectorizer(vectorizer_path)
         return cls(df, vectorizer)
 
     @staticmethod
     def load_vectorizer(vectorizer_path):
-        with open(vectorizer_path,encoding='utf-8') as fp:
+        with open(vectorizer_path, encoding='utf-8') as fp:
             vectorizer = Vectorizer.from_json(json.load(fp))
         return vectorizer
 
-    def save_vectorizer(self,out_path):
-        with open(out_path,'w',encoding='utf-8') as fp:
+    def save_vectorizer(self, out_path):
+        with open(out_path, 'w', encoding='utf-8') as fp:
             json.dump(self.vectorizer.to_json(), fp)
 
     def get_vectorizer(self):
@@ -219,15 +223,16 @@ class CBOWDataset(Dataset):
         print(row.word)
         print("Index of target", str(target_index))"""
 
-        return {'x_data' : context,
-                'y_target' : target_index}
+        return {'x_data': context,
+                'y_target': target_index}
 
     def get_num_batches(self, batch_size):
         return len(self) // batch_size
 
 
-def batch_generator(dataset, batch_size,shuffle=True,drop_last=True,device='cpu'):
-    dataloader = DataLoader(dataset=dataset,batch_size=batch_size,shuffle=shuffle,drop_last=drop_last)
+def batch_generator(dataset, batch_size, shuffle=True, drop_last=True, device='cpu'):
+    dataloader = DataLoader(
+        dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last)
 
     for data in dataloader:
         out_data = {}
@@ -242,29 +247,30 @@ class CBOWNetzwerk(nn.Module):
 
     """
 
-    def __init__(self,vocab_size,embedding_size,padding=0):
-        super(CBOWNetzwerk,self).__init__()
+    def __init__(self, vocab_size, embedding_size, padding=0):
+        super(CBOWNetzwerk, self).__init__()
         self.embedding = nn.Embedding(num_embeddings=vocab_size,
                                       embedding_dim=embedding_size,
                                       padding_idx=padding)
         self.fc1 = nn.Linear(in_features=embedding_size,
                              out_features=200)
-        self.fc2 = nn.Linear(in_features=200,out_features=150)
+        self.fc2 = nn.Linear(in_features=200, out_features=150)
         self.fc3 = nn.Linear(in_features=150,
                              out_features=vocab_size)
 
-    def forward(self,x,softmax = True):
-        x = F.dropout(self.embedding(x).sum(dim=1),0.3)
+    def forward(self, x, softmax=True):
+        x = F.dropout(self.embedding(x).sum(dim=1), 0.3)
         x = F.relu(x)
         x = self.fc1(x)
         x = self.fc2(F.relu(x))
         x = self.fc3(x)
 
         if softmax:
-            x = F.log_softmax(x,dim=1)
+            x = F.log_softmax(x, dim=1)
         return x
 
 # ########## TRAINING ROUTINE ####################
+
 
 def make_train_state(args):
     return {'stop_early': True,
@@ -280,7 +286,8 @@ def make_train_state(args):
             'test_acc': -1,
             'model_filename': args.model_state_file}
 
-def update_train_state(args,model,train_state):
+
+def update_train_state(args, model, train_state):
     """Handle the training state updates.
 
     Components:
@@ -321,10 +328,12 @@ def update_train_state(args,model,train_state):
 
     return train_state
 
-def compute_accuracy(y_pred,y_true):
+
+def compute_accuracy(y_pred, y_true):
     _, y_pred_indices = y_pred.max(dim=1)
-    n_correct = torch.eq(y_pred_indices,y_true).sum().item()
+    n_correct = torch.eq(y_pred_indices, y_true).sum().item()
     return n_correct / len(y_pred_indices) * 100
+
 
 def handle_dirs(dirpath):
     if not os.path.exists(dirpath):
