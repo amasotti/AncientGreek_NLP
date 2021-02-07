@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'Antonio Masotti'
 __date__ = 'Dezember 2020'
 
@@ -12,9 +12,11 @@ import requests
 import re
 import os
 import glob
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 
-def downloadTexts(indirizzo,title):
+
+def downloadTexts(indirizzo, title):
     '''
 
     :param indirizzo: url of the work on Perseus under Philologicus
@@ -25,15 +27,18 @@ def downloadTexts(indirizzo,title):
     parsed = BeautifulSoup(get_source.text, 'lxml')
 
     # find all the chapters
-    books_urls = re.finditer(r"<span class=\"navlevel1\"><a href=\"(.*)\">", str(parsed),re.MULTILINE)
+    books_urls = re.finditer(
+        r"<span class=\"navlevel1\"><a href=\"(.*)\">", str(parsed), re.MULTILINE)
 
     # find all the titles
-    books_titles = re.finditer(r"<span class=\"navlevel1\"><a href=\"(.*)\">(.*)<\/a>", str(parsed),re.MULTILINE)
+    books_titles = re.finditer(
+        r"<span class=\"navlevel1\"><a href=\"(.*)\">(.*)<\/a>", str(parsed), re.MULTILINE)
 
     # create a list with the chapters
     books_link = []
-    for link in books_urls:
-        books_link.append("http://artflsrv02.uchicago.edu/cgi-bin/perseus/"+link.group(1))
+    for link in tqdm(books_urls):
+        books_link.append(
+            "http://artflsrv02.uchicago.edu/cgi-bin/perseus/"+link.group(1))
 
     # create a list with the titles (index)
     titles_list = []
@@ -47,21 +52,20 @@ def downloadTexts(indirizzo,title):
         get_book = requests.get(books)
         parse_book = BeautifulSoup(get_book.text, 'lxml')
         text = parse_book.find("div", {"id": "perseuscontent"}).text
-        file_name = title +"_"+ str(titles_list[counter])+".txt"
+        file_name = "./Ilias/" + title + "_" + str(titles_list[counter])+".txt"
         with open(file_name, "w+", encoding="UTF-8") as testo:
             testo.write(text)
         counter += 1
 
 
-thucy_address = "http://artflsrv02.uchicago.edu/cgi-bin/perseus/citequery3.pl?dbname=GreekDec20&query=Thuc.&getid=0"
-# downloadTexts(thucy_address, 'PeloponnesianWord')
+homer_address = "http://artflsrv02.uchicago.edu/cgi-bin/perseus/citequery3.pl?dbname=GreekDec20&query=Hom.%20Od.&getid=0"
+downloadTexts(homer_address, 'Odyssey')
 
+# Join texts
 
-### Join texts
+text_files = glob.glob('./Ilias/*.txt')
 
-text_files = glob.glob('C:/Users/Slavist29/Dropbox/Programming/NLP/GreekParser/data/Pelo*.txt')
-
-with open('../data/Thucydides_raw.txt', 'w', encoding='utf-8') as out:
+with open('Homer_raw.txt', 'w', encoding='utf-8') as out:
     for text in text_files:
         with open(text, 'r', encoding='utf-8') as source:
             content = source.read()

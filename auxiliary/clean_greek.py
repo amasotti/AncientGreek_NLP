@@ -14,9 +14,9 @@ import re
 
 args = Namespace(
     # raw text, as downloaded from Perseus
-    raw_data="../data/raw_data/Thucydides_raw.txt",
-    stopwd_path="../data/stopwords.txt",  # stopword list for greek
-    cleaned_text="../data/raw_data/cleaned_text.txt"
+    raw_data="data/raw_data/Homer_raw.txt",
+    stopwd_path="data/stopwords.txt",  # stopword list for greek
+    cleaned_text="data/raw_data/Homer_cleaned.txt"
 )
 
 
@@ -40,10 +40,10 @@ def clean_greek(text):
     text = re.sub(r';', '?', text, 0, re.MULTILINE)
     # delete everything which is not text
     text = re.sub(r"\d+(\.\d+)?", r" ", text, 0, re.MULTILINE)
-    text = re.sub("\d(\.\d\.\d)+", '', text, 0, re.MULTILINE)
+    text = re.sub(r"\d(\.\d\.\d)+", '', text, 0, re.MULTILINE)
     text = re.sub(r'\d+', '', text, re.MULTILINE)
     # add whitespace after punctuation
-    text = re.sub(r"([.,!?·])", r" \1 ", text, 0, re.MULTILINE)
+    text = re.sub(r"([.,!?·])", " \\1 ", text, 0, re.MULTILINE)
     # delete row break
     text = re.sub(r"\n+", " ", text, 0, re.MULTILINE)
     text = re.sub(r"\\n+", " ", text, 0, re.MULTILINE)
@@ -55,7 +55,7 @@ def clean_greek(text):
     text = re.sub(r'  +', ' ', text, 0, re.MULTILINE)
     text = re.sub(r'\s\.\s\.\s', ' . ', text, 0, re.MULTILINE)
     text = re.sub(r'\s·\s.\s', ' · ', text, 0, re.MULTILINE)
-    text = re.sub(r"(\w)(\.|\,|\?|·|;)", "\\1 \\2", data, 0, re.MULTILINE)
+    text = re.sub(r"(\w)(\.|\,|\?|·|;)", "\\1 \\2", text, 0, re.MULTILINE)
     #
 
     print(f'cleaning successfull; actual size: {len(text)}')
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     text = load_text(args.raw_data)
     # apply cleaning
     text = clean_greek(text)
-
+    """
     # load stopwords
     with open(args.stopwd_path, 'r', encoding="utf-8") as src:
         stopwords = src.read()
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     data = " ".join(w for w in tokens_raw_cleaned)
 
     # remove accents and breathings
-    data = strip_accents(strip_breathing(data))
-
-    print(data[:150])
+    # data = strip_accents(strip_breathing(data))
+    """
+    print(text[:150])
     with open(args.cleaned_text, 'w', encoding='utf-8') as out:
-        out.write(data)
+        out.write(text)
