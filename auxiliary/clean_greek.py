@@ -14,7 +14,7 @@ import re
 
 args = Namespace(
     # raw text, as downloaded from Perseus
-    raw_data="data/raw_data/Homer_raw.txt",
+    raw_data="data/raw_data/Homer_cleaned.txt",
     stopwd_path="data/stopwords.txt",  # stopword list for greek
     cleaned_text="data/raw_data/Homer_cleaned.txt"
 )
@@ -56,7 +56,13 @@ def clean_greek(text):
     text = re.sub(r'\s\.\s\.\s', ' . ', text, 0, re.MULTILINE)
     text = re.sub(r'\s·\s.\s', ' · ', text, 0, re.MULTILINE)
     text = re.sub(r"(\w)(\.|\,|\?|·|;)", "\\1 \\2", text, 0, re.MULTILINE)
-    #
+    # Quotes
+    text = re.sub(r"“(\w+)", " \\1", text, 0, re.MULTILINE)
+    text = re.sub(r"(\s?\w)“", " \\1 ", text, 0, re.MULTILINE)
+    text = re.sub(r'«(\s?\w)', " \\1", text, 0, re.MULTILINE)
+    text = re.sub(r'(\s?\w)«', " \\1 ", text, 0, re.MULTILINE)
+    text = re.sub(r'(\s?\w)»', " \\1 ", text, 0, re.MULTILINE)
+    text = re.sub(r"(\w+)—", " \\1", text, 0, re.MULTILINE)
 
     print(f'cleaning successfull; actual size: {len(text)}')
     return text
